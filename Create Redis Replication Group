@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create test redis cache"
+  
+Resources:
+    RedisSecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Postgres DB instances security group"
+            VpcId: !ImportValue DevOps-VPCID
+            Tags:
+              - Key: Name
+                Value: eu-west-1-DevOps-Redis-SecurityGroup
+              - Key: Project
+                Value: AWS-DevOps
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Environment
+                Value: Prod
+
+    RedisSubnetGroup:
+        Type: "AWS::ElastiCache::SubnetGroup"
+        Properties:
+            Description: Subnet Group for Devops Redis Cache
+            CacheSubnetGroupName: eu-west-1-DevOps-Redis-SubnetGroup
+            SubnetIds: 
+              - !ImportValue DevOps-PrivateSubnet05Id
+              - !ImportValue DevOps-PrivateSubnet06Id
+            Tags:
+              - Key: Name
+                Value: eu-west-1-AWS-DevOps-Redis-SubnetGroup
+              - Key: Project
+                Value: AWS-DevOps
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Environment
+                Value: Prod
+  
+    RedisLogGroup:
+       Type: AWS::Logs::LogGroup
+       Properties:
+            LogGroupName: eu-west-1-DevOps-Redis-LogGroup
+            RetentionInDays: 60
+
+    RedisReplicationGroup:
+        Type: AWS::ElastiCache::ReplicationGroup
+        DependsOn: RedisLogGroup
+        Properties: 
+            AtRestEncryptionEnabled: true
+            AuthToken: '{{resolve:ssm-secure:redis-devops-gitlab-password:1}}'
+            AutomaticFailoverEnabled: true
+            CacheNodeType: cache.m1.medium
+            CacheParameterGroupName: default.redis6.x.cluster.on
+            CacheSubnetGroupName: !Ref RedisSubnetGroup
+            Engine: "redis"
+            EngineVersion: 6.x
+            LogDeliveryConfigurations:
+              - DestinationDetails: 
+                 CloudWatchLogsDetails:
+                   LogGroup: !Ref RedisLogGroup
+                DestinationType: cloudwatch-logs
+                LogFormat: json
+                LogType: slow-log
+            MultiAZEnabled: true
+            NumNodeGroups: 2
+            Port: 6300
+            PreferredMaintenanceWindow: sun:23:00-mon:01:30
+            ReplicasPerNodeGroup: 1
+            ReplicationGroupDescription: the aws devops redis replication group
+            ReplicationGroupId: eu-west-1-AWS-DevOps-Redis-RG
+            SecurityGroupIds: 
+              - !Ref RedisSecurityGroup
+            Tags:
+              - Key: Name
+                Value: eu-west-1-AWS-DevOps-Redis-RG
+              - Key: Project
+                Value: AWS-DevOps
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Environment
+                Value: Prod
+            TransitEncryptionEnabled: true
+ 
+Outputs:
+   RedisRG:
+    Description: The DB Cluster Name
+    Value: !Ref RedisReplicationGroup
+    
+   SubnetGroup:
+    Description: The db subnet group name 
+    Value: !Ref RedisSubnetGroup
