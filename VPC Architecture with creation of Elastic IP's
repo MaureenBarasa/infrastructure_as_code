@@ -318,13 +318,13 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet02
-      RouteTableId: !Ref PrivateRouteTable01
+      RouteTableId: !Ref PrivateRouteTable02
 
   PrivateSubnet03RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet03
-      RouteTableId: !Ref PrivateRouteTable02
+      RouteTableId: !Ref PrivateRouteTable01
 
   PrivateSubnet04RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
