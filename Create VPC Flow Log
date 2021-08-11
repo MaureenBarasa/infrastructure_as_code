@@ -1,0 +1,94 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Create AWS Channels VPC FlowLogs'
+
+Parameters:
+    VPC1:
+      Type: String
+      Description: The vpc to create the flowlog
+      Default: vpc-ID
+
+    LogGroup1:
+      Type: String
+      Description: the name cloudwatch loggroup name for the vpc flowlog
+      Default: test-vpc-flowlogs
+
+Resources:
+  CWLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref LogGroup1
+      RetentionInDays: 14
+
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: The VPC FlowLog Role
+      RoleName: FlowLog
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - vpc-flow-logs.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Tags:
+        - Key: Name
+          Value: eu-west-1-test-VPC-FlowLogs
+        - Key: Project
+          Value: AWS-Test
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: environment
+          Value: UAT
+        - Key: SharedResource
+          Value: No   
+
+  IAMPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: FlowLogs
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogGroup'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+              - 'logs:DescribeLogGroups'
+              - 'logs:DescribeLogStreams'
+            Resource: '*'
+      Roles: 
+        - !Ref IAMRole
+
+  FlowLog1:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt IAMRole.Arn
+      LogDestination: !GetAtt CWLogGroup.Arn
+      LogDestinationType: cloud-watch-logs
+      ResourceId: !Ref VPC1
+      MaxAggregationInterval: 600
+      ResourceType: VPC
+      TrafficType: ALL
+      Tags:
+        - Key: Name
+          Value: eu-west-1-test-VPC-FlowLogs
+        - Key: Project
+          Value: AWS-Test
+        - Key: createdBy
+          Value: Maureen Barasa
+        - Key: environment
+          Value: UAT
+        - Key: SharedResource
+          Value: No   
+
+Outputs:
+  FW1:
+    Description: Subnets IDs in the VPC
+    Value: !Ref FlowLog1
+
+
