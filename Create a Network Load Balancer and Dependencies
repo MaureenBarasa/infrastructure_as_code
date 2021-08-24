@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create Channels load balancers, target groups, targets and security groups"
+
+Parameters:
+    VPC:
+        Type: String
+        Description: The vpc to launch the service
+        Default: vpc-ID
+
+    PublicSubnet1:
+        Type: String
+        Description: The subnet where to launch the service
+        Default: subnet-ID
+
+    PublicSubnet2:
+        Type: String
+        Description: the subnet where to Launch the service
+        Default: subnet-ID
+        
+    PrivateSubnet05:
+        Type: String
+        Description: The subnet where to launch the service
+        Default: subnet-ID
+
+    PrivateSubnet06:
+        Type: String
+        Description: the subnet where to Launch the service
+        Default: subnet-ID
+
+Resources:            
+    NetworkLoadBalancer:
+        Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+        Properties:
+            Name: "eu-west-1-AWS-Test-Internal-NLB"
+            Scheme: "internal"
+            Type: "network"
+            Subnets: 
+              - !Ref PrivateSubnet05
+              - !Ref PrivateSubnet06
+
+            IpAddressType: "ipv4"
+            Tags:
+              - Key: Name
+                Value: eu-west-1-AWS-Test-Internal-NLB
+              - Key: Project
+                Value: AWS-EDMS
+              - Key: BusinessOwner
+                Value: Channels
+              - Key: createdBy
+                Value: Maureen Barasa
+              - Key: Environment
+                Value: UAT
+
+    TargetGroup1:
+        Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+        Properties:
+            HealthCheckEnabled: true
+            HealthCheckIntervalSeconds: 10
+            HealthCheckPort: traffic-port
+            HealthCheckProtocol: TCP
+            HealthyThresholdCount: 3
+            UnhealthyThresholdCount: 3
+            Name: eu-west-1-Test-Internal-TG
+            Port: 6379
+            Protocol: TCP
+            Targets: 
+              -
+                Id: instance ID
+                Port: 6379
+            TargetType: instance 
+            VpcId: !Ref VPC
+                
+    Listener1:
+        Type: "AWS::ElasticLoadBalancingV2::Listener"
+        Properties:
+            LoadBalancerArn: !Ref NetworkLoadBalancer
+            Port: 6379
+            Protocol: "TCP"
+            DefaultActions: 
+              - 
+                TargetGroupArn: !Ref TargetGroup1
+                Type: "forward"
+                
+Outputs:        
+    NLB:
+        Description: The created loadbalancer
+        Value: !Ref NetworkLoadBalancer
